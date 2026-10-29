@@ -2,10 +2,9 @@
 
 Seven ways to turn a flat architectural drawing into a 3D experience you scroll through. Each one starts from a drawing architects already use, an exploded axo, a section, a sequence sheet, a construction programme, a study model or an elevation, and turns it into the real building as you scroll.
 
-[**See all seven live**](https://sam1983aing.github.io/flat-to-3d/) · best on a laptop
-
-**繁體中文說明：** [README.zh-TW.md](README.zh-TW.md)  
-**雙語案例網站（繁中 / EN）：** [case-study/index.html](case-study/index.html)
+[**See all seven live**](https://sam1983aing.github.io/flat-to-3d/) · best on a laptop  
+[**雙語案例網站（繁中 / EN）**](case-study/index.html)  
+[**繁體中文說明**](README.zh-TW.md)
 
 Every demo comes with its full code and a starter prompt to build your own version.
 
