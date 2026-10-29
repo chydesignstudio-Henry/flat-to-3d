@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flat to 3D · 雙語版</title>
+<meta name="description" content="七種將平面建築圖紙轉為 3D 捲動體驗的方法 / Seven ways to turn a flat architectural drawing into a 3D scroll experience.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #141413;
+    --panel: #1d1c19;
+    --paper: #f2efe7;
+    --ink: #f2efe7;
+    --mute: #9a9488;
+    --line: rgba(242, 239, 231, 0.16);
+    --line-strong: rgba(242, 239, 231, 0.34);
+    --accent: #e85d04;
+    --sans: 'Chakra Petch', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --bar-h: 44px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; width: 100%; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  #master-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--bar-h);
+    background: var(--panel); border-bottom: 1px solid var(--line-strong);
+    display: flex; align-items: center; z-index: 1000; user-select: none;
+  }
+  .brand-cell {
+    display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 14px;
+    border-right: 1px solid var(--line); font: 600 11px/1 var(--mono);
+    letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap;
+    color: var(--ink); background: transparent; border-top: 0; border-bottom: 0; border-left: 0;
+  }
+  .brand-cell .dot { width: 7px; height: 7px; background: var(--accent); display: inline-block; }
+  .lang-toggle { display: flex; height: 100%; border-right: 1px solid var(--line); }
+  .lang-toggle button {
+    background: transparent; border: 0; color: var(--mute); padding: 0 10px;
+    font: 500 11px var(--mono); cursor: pointer; height: 100%;
+  }
+  .lang-toggle button.active { background: var(--accent); color: #fff; }
+  .num-strip {
+    display: flex; align-items: stretch; height: 100%; border-right: 1px solid var(--line);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .num-strip::-webkit-scrollbar { display: none; }
+  .demo-btn {
+    appearance: none; border: 0; border-right: 1px solid var(--line);
+    background: transparent; color: var(--mute); padding: 0 11px; height: 100%;
+    display: inline-flex; align-items: center; gap: 6px;
+    font: 500 11px/1 var(--mono); cursor: pointer; white-space: nowrap;
+  }
+  .demo-btn .n { font-weight: 600; color: var(--ink); opacity: 0.75; }
+  .demo-btn .lbl { font-family: var(--sans); font-weight: 600; font-size: 11.5px; display: none; }
+  @media (min-width: 1200px) { .demo-btn .lbl { display: inline; } }
+  .demo-btn:hover { background: rgba(255,255,255,0.06); color: var(--ink); }
+  .demo-btn.active { background: var(--paper); color: #161513; }
+  .demo-btn.active .n { color: var(--accent); opacity: 1; }
+  .active-meta {
+    display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 100%;
+    min-width: 0; flex: 1; overflow-x: auto; scrollbar-width: none;
+  }
+  .active-title { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+  .active-title .code { font: 600 10px/1 var(--mono); color: var(--accent); letter-spacing: 0.1em; }
+  .active-title .name { font: 700 13px/1 var(--sans); letter-spacing: 0.02em; text-transform: uppercase; }
+  .bar-actions { display: flex; align-items: stretch; height: 100%; margin-left: auto; border-left: 1px solid var(--line); }
+  .act-btn {
+    appearance: none; border: 0; border-right: 1px solid var(--line);
+    background: transparent; color: var(--ink); padding: 0 12px;
+    font: 500 10.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; display: inline-flex; align-items: center; text-decoration: none;
+  }
+  .act-btn:hover { background: rgba(255,255,255,0.08); }
+  #stage-wrap { position: fixed; top: var(--bar-h); left: 0; right: 0; bottom: 0; background: var(--paper); }
+  #stage { width: 100%; height: 100%; border: 0; display: block; background: var(--paper); }
+  #matrix-drawer {
+    position: fixed; top: var(--bar-h); left: 0; right: 0; bottom: 0;
+    background: rgba(20,20,19,0.96); backdrop-filter: blur(10px);
+    z-index: 950; overflow-y: auto; padding: 28px 32px 48px; display: none;
+  }
+  #matrix-drawer.open { display: block; }
+  .matrix-head { max-width: 1360px; margin: 0 auto 20px; border-bottom: 1px solid var(--line-strong); padding-bottom: 14px; }
+  .matrix-head h2 { margin: 0; font: 700 22px/1.1 var(--sans); letter-spacing: 0.02em; text-transform: uppercase; }
+  .matrix-head p { margin: 6px 0 0; font: 400 12px/1.4 var(--mono); color: var(--mute); }
+  .matrix-grid { max-width: 1360px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 14px; }
+  .sheet-card { background: #1e1d1b; border: 1px solid var(--line-strong); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .sheet-card:hover { border-color: var(--ink); }
+  .sheet-card-top { display: flex; justify-content: space-between; font: 600 11px/1 var(--mono); color: var(--mute); }
+  .sheet-card-top .num { color: var(--accent); }
+  .sheet-card h3 { margin: 0; font: 700 18px/1.15 var(--sans); cursor: pointer; }
+  .sheet-card p { margin: 0; font-size: 13px; line-height: 1.45; color: #c7c1b5; flex: 1; }
+  .sheet-vars { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .var-pill { border: 1px solid var(--line-strong); background: rgba(255,255,255,0.03); color: var(--mute); font: 500 10px/1 var(--mono); padding: 5px 8px; cursor: pointer; }
+  .var-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+<header id="master-bar">
+  <button class="brand-cell" id="toggle-matrix">
+    <span class="dot"></span>
+    <span>FLAT TO 3D</span>
+  </button>
+  <div class="lang-toggle">
+    <button id="btn-zh" class="active" onclick="setLang('zh')">繁中</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+  <nav class="num-strip" id="num-strip"></nav>
+  <div class="active-meta">
+    <div class="active-title">
+      <span class="code" id="cur-code"></span>
+      <span class="name" id="cur-name"></span>
+    </div>
+  </div>
+  <div class="bar-actions">
+    <button class="act-btn" id="prev-btn">←</button>
+    <button class="act-btn" id="next-btn">→</button>
+    <a class="act-btn" id="open-new" href="#" target="_blank">OPEN ↗</a>
+  </div>
+</header>
+
+<div id="matrix-drawer">
+  <div class="matrix-head">
+    <div>
+      <h2 id="matrix-title">FLAT TO 3D</h2>
+      <p id="matrix-sub">選擇一種技術，即時體驗。</p>
+    </div>
+    <button class="act-btn" id="close-matrix" style="padding:8px 14px;">✕</button>
+  </div>
+  <div class="matrix-grid" id="matrix-grid"></div>
+</div>
+
+<main id="stage-wrap">
+  <iframe id="stage" title="Active Demo" allow="fullscreen"></iframe>
+</main>
+
+<script>
+const I18N = {
+  zh: {
+    matrixTitle: "FLAT TO 3D · 七種技術",
+    matrixSub: "選擇一種技術或其中一種變體。每個示範皆可在瀏覽器即時執行。",
+    demos: [
+      { id:"01", code:"PURLIN // AXO-01", title:"爆炸房屋", desc:"爆炸軸測圖依建造順序逐層落地。接著鏡頭展開至視線高度，你走入室內。", variants:[{label:"A · 面板",url:"01-exploded-house/index.html?dir=a"},{label:"B · 展開房間",url:"01-exploded-house/index.html?dir=b"},{label:"C · 逐層",url:"01-exploded-house/index.html?dir=c"}] },
+      { id:"02", code:"COTA // SWP-02", title:"剖面掃掠", desc:"剖面圖展開成深度空間。掃描將墨線轉為材質，繪製的日照角度變成真實光束。", variants:[{label:"示範",url:"02-section-sweep/index.html"}] },
+      { id:"03", code:"POCHÉ // SEC-03", title:"開啟剖面", desc:"平面剖面圖自行繪製。鏡頭展開同時切口維持原尺寸，相機從切口探訪每一層樓。", variants:[{label:"A · 開啟鏡頭",url:"03-open-section/index.html?dir=a"},{label:"C · 下樓梯",url:"03-open-section/index.html?dir=c"}] },
+      { id:"04", code:"SEQUENCE // A-901", title:"建造時間流逝", desc:"同一棟房屋的六張階段圖紙。潛入第一張圖，在工地漫步，看著它週週成長。", variants:[{label:"示範",url:"04-build-time-lapse/index.html"}] },
+      { id:"05", code:"PURLIN // CPM-05", title:"進度表建造", desc:"捲動施工計劃，房屋依進度條逐段建造，包含起重機。接著前門開啟。", variants:[{label:"A · 計劃",url:"05-schedule-build/index.html?dir=a"},{label:"B · 1:1 工地圖",url:"05-schedule-build/index.html?dir=b"},{label:"C · 工地相機",url:"05-schedule-build/index.html?dir=c"}] },
+      { id:"06", code:"ATELIER 1:100 // MDL-06", title:"卡片模型", desc:"夜晚書桌上的白色卡片模型。潛入比例人偶，卡片變成真實房屋。", variants:[{label:"示範",url:"06-card-model/index.html"}] },
+      { id:"07", code:"ALBION ROW // ELV-07", title:"日照立面", desc:"正面立面圖的影線即為真實陰影。掃掠將其轉為磚牆，太陽移動，門開啟。", variants:[{label:"A · 一扇門",url:"07-sunlit-elevation/a-one-door/index.html"},{label:"B · 一排",url:"07-sunlit-elevation/b-the-row/index.html"},{label:"C · 正面",url:"07-sunlit-elevation/c-the-face/index.html"}] }
+    ]
+  },
+  en: {
+    matrixTitle: "FLAT TO 3D · SEVEN TECHNIQUES",
+    matrixSub: "Pick a technique or one of its takes. Each one runs live in your browser.",
+    demos: [
+      { id:"01", code:"PURLIN // AXO-01", title:"Exploded House", desc:"An exploded axo lands layer by layer in building order. Then the lens widens to eye level and you walk inside.", variants:[{label:"A · The Board",url:"01-exploded-house/index.html?dir=a"},{label:"B · Unfolded Room",url:"01-exploded-house/index.html?dir=b"},{label:"C · Floor by Floor",url:"01-exploded-house/index.html?dir=c"}] },
+      { id:"02", code:"COTA // SWP-02", title:"Section Sweep", desc:"A section drawing opens into depth. A scan turns the ink into material and the drawn sun angles into real sunbeams.", variants:[{label:"Demo",url:"02-section-sweep/index.html"}] },
+      { id:"03", code:"POCHÉ // SEC-03", title:"Open Section", desc:"A flat section plots itself. The lens opens while the cut keeps its size, and the camera visits each floor from the cut.", variants:[{label:"A · Open the lens",url:"03-open-section/index.html?dir=a"},{label:"C · Down the stair",url:"03-open-section/index.html?dir=c"}] },
+      { id:"04", code:"SEQUENCE // A-901", title:"Build Time-Lapse", desc:"Six drawings of one house, stage by stage. Dive into the first one and walk the site while it goes up.", variants:[{label:"Demo",url:"04-build-time-lapse/index.html"}] },
+      { id:"05", code:"PURLIN // CPM-05", title:"Schedule Build", desc:"Scroll the construction programme and the house builds itself bar by bar, crane and all. Then the front door opens.", variants:[{label:"A · The Programme",url:"05-schedule-build/index.html?dir=a"},{label:"B · 1:1 Site Sheet",url:"05-schedule-build/index.html?dir=b"},{label:"C · Site Camera",url:"05-schedule-build/index.html?dir=c"}] },
+      { id:"06", code:"ATELIER 1:100 // MDL-06", title:"Card Model", desc:"A white card model on a desk at night. Dive down to the scale figure and the card turns into the real house.", variants:[{label:"Demo",url:"06-card-model/index.html"}] },
+      { id:"07", code:"ALBION ROW // ELV-07", title:"Sunlit Elevation", desc:"A front elevation whose hatching is the real shadow. A sweep turns it into brick, the sun moves, the door opens.", variants:[{label:"A · One Door",url:"07-sunlit-elevation/a-one-door/index.html"},{label:"B · The Row",url:"07-sunlit-elevation/b-the-row/index.html"},{label:"C · The Face",url:"07-sunlit-elevation/c-the-face/index.html"}] }
+    ]
+  }
+};
+
+let lang = localStorage.getItem('lang') || 'zh';
+let activeIdx = 0;
+let activeVarIdx = 0;
+let loadToken = 0;
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.documentElement.lang = l === 'zh' ? 'zh-TW' : 'en';
+  document.getElementById('btn-zh').classList.toggle('active', l === 'zh');
+  document.getElementById('btn-en').classList.toggle('active', l === 'en');
+  document.getElementById('matrix-title').textContent = I18N[l].matrixTitle;
+  document.getElementById('matrix-sub').textContent = I18N[l].matrixSub;
+  buildUI();
+  selectDemo(activeIdx, activeVarIdx, false);
+}
+
+function buildUI() {
+  const demos = I18N[lang].demos;
+  const numStrip = document.getElementById('num-strip');
+  numStrip.innerHTML = '';
+  demos.forEach((d, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'demo-btn';
+    btn.innerHTML = `<span class="n">${d.id}</span><span class="lbl">${d.title}</span>`;
+    btn.onclick = () => selectDemo(idx, 0);
+    numStrip.appendChild(btn);
+  });
+
+  const grid = document.getElementById('matrix-grid');
+  grid.innerHTML = '';
+  demos.forEach((d, idx) => {
+    const card = document.createElement('div');
+    card.className = 'sheet-card';
+    card.innerHTML = `
+      <div class="sheet-card-top"><span class="num">SHEET ${d.id}</span><span>${d.code}</span></div>
+      <h3>${d.id} · ${d.title}</h3>
+      <p>${d.desc}</p>
+      <div class="sheet-vars"></div>
+    `;
+    card.querySelector('h3').onclick = () => { selectDemo(idx, 0); setMatrix(false); };
+    const vars = card.querySelector('.sheet-vars');
+    d.variants.forEach((v, vIdx) => {
+      const p = document.createElement('button');
+      p.className = 'var-pill';
+      p.textContent = v.label;
+      p.onclick = () => { selectDemo(idx, vIdx); setMatrix(false); };
+      vars.appendChild(p);
+    });
+    grid.appendChild(card);
+  });
+}
+
+function selectDemo(idx, vIdx = 0, push = true) {
+  const demos = I18N[lang].demos;
+  activeIdx = (idx + demos.length) % demos.length;
+  const demo = demos[activeIdx];
+  activeVarIdx = Math.max(0, Math.min(vIdx, demo.variants.length - 1));
+  const variant = demo.variants[activeVarIdx];
+
+  document.querySelectorAll('.demo-btn').forEach((b, i) => b.classList.toggle('active', i === activeIdx));
+  document.getElementById('cur-code').textContent = demo.code;
+  document.getElementById('cur-name').textContent = demo.title;
+  document.getElementById('open-new').href = variant.url;
+
+  const token = ++loadToken;
+  document.getElementById('stage').src = 'about:blank';
+  setTimeout(() => {
+    if (token === loadToken) document.getElementById('stage').src = variant.url;
+  }, 30);
+}
+
+function setMatrix(open) {
+  document.getElementById('matrix-drawer').classList.toggle('open', open);
+}
+document.getElementById('toggle-matrix').onclick = () => setMatrix(!document.getElementById('matrix-drawer').classList.contains('open'));
+document.getElementById('close-matrix').onclick = () => setMatrix(false);
+document.getElementById('prev-btn').onclick = () => selectDemo(activeIdx - 1, 0);
+document.getElementById('next-btn').onclick = () => selectDemo(activeIdx + 1, 0);
+
+setLang(lang);
+</script>
+</body>
+</html>
