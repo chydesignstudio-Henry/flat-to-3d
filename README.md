@@ -2,8 +2,8 @@
 
 Seven ways to turn a flat architectural drawing into a 3D experience you scroll through. Each one starts from a drawing architects already use, an exploded axo, a section, a sequence sheet, a construction programme, a study model or an elevation, and turns it into the real building as you scroll.
 
-[**See all seven live**](https://sam1983aing.github.io/flat-to-3d/) · best on a laptop  
-[**雙語案例網站（繁中 / EN）**](case-study/index.html)  
+[**See all seven live (original)**](https://sam1983aing.github.io/flat-to-3d/) · best on a laptop  
+[**雙語互動展示（繁中 / EN）**](index-bilingual.html) ← 你的版本  
 [**繁體中文說明**](README.zh-TW.md)
 
 Every demo comes with its full code and a starter prompt to build your own version.
@@ -45,7 +45,7 @@ The pages use JavaScript modules, so they need a local server. A double click on
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000/.
+Then open http://localhost:8000/index-bilingual.html for the bilingual version.
 
 ## Notes
 
@@ -58,5 +58,6 @@ Made by Samnang Aing. I share builds like this as I go on [X](https://x.com/Samm
 ---
 
 **Fork notes (chydesignstudio-Henry):**
+- [Bilingual Interactive Showcase (繁中 / EN)](index-bilingual.html)
 - [Traditional Chinese README](README.zh-TW.md)
-- [Bilingual Case Study Website (繁中 / EN)](case-study/index.html)
+- [Case Study Page](case-study/index.html)
