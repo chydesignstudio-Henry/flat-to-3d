@@ -4,6 +4,9 @@ Seven ways to turn a flat architectural drawing into a 3D experience you scroll 
 
 [**See all seven live**](https://sam1983aing.github.io/flat-to-3d/) · best on a laptop
 
+**繁體中文說明：** [README.zh-TW.md](README.zh-TW.md)  
+**雙語案例網站（繁中 / EN）：** [case-study/index.html](case-study/index.html)
+
 Every demo comes with its full code and a starter prompt to build your own version.
 
 ## The seven
@@ -52,3 +55,9 @@ Then open http://localhost:8000/.
 - The code is MIT licensed, see [LICENSE](LICENSE). three.js is MIT. The fonts, Chakra Petch and IBM Plex Mono, load from Google Fonts under the SIL Open Font License.
 
 Made by Samnang Aing. I share builds like this as I go on [X](https://x.com/SammmAing) and [Threads](https://www.threads.com/@prompting_lab).
+
+---
+
+**Fork notes (chydesignstudio-Henry):**
+- [Traditional Chinese README](README.zh-TW.md)
+- [Bilingual Case Study Website (繁中 / EN)](case-study/index.html)
