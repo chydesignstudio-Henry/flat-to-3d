@@ -8,15 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --paper: #f2efe7;
-    --ink: #1d1c19;
-    --accent: #e85d04;
-    --mono: 'IBM Plex Mono', ui-monospace, monospace;
-    --display: 'Chakra Petch', 'Noto Sans TC', sans-serif;
-    --sans: 'Chakra Petch', 'Noto Sans TC', sans-serif;
-    --g: 28px;
-  }
+  :root { --paper: #f2efe7; --ink: #1d1c19; --accent: #e85d04; --mono: 'IBM Plex Mono', ui-monospace, monospace; --display: 'Chakra Petch', 'Noto Sans TC', sans-serif; --sans: 'Chakra Petch', 'Noto Sans TC', sans-serif; --g: 28px; }
   html, body { margin: 0; background: var(--paper); color: var(--ink); }
   body { overscroll-behavior: none; -webkit-font-smoothing: antialiased; }
   #gl { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
@@ -91,11 +83,8 @@
   <p class="sub">一座位於斜坡上的房屋，於 A-A 切開。捲動並從切口走入。</p>
   <div class="chip"></div>
   <div class="hint">捲動以開啟鏡頭</div>
-  <div class="room">
-    <div class="r-txt"><span class="lv"></span><b></b><span class="nt"></span></div>
-  </div>
-  <div id="cad-map">
-    <div id="cm-lbl">SEC A-A // POS 15.6, 1.6M</div>
+  <div class="room"><div class="r-txt"><span class="lv"></span><b></b><span class="nt"></span></div></div>
+  <div id="cad-map"><div id="cm-lbl">SEC A-A // POS 15.6, 1.6M</div>
     <svg viewBox="1 -9.2 29 14" aria-label="Interactive section radar">
       <g transform="scale(1,-1)">
         <rect class="cm-zone" data-stop="The study" data-tag="STUDY +3.20M" x="4" y="3.2" width="6.4" height="4.6"/>
@@ -178,41 +167,5 @@
 } }
 </script>
 <script type="module" src="main.js"></script>
-<script>
-// Language override for dynamic room labels
-(function() {
-  const map = {
-    'The living room': '客廽',
-    '6.40 m high, the low sun of December': '高度 6.40 公尺，十二月低角度陽光',
-    'The study': '書房',
-    'Books on the north wall, light from above': '北牆書架，上方採光',
-    'The upper lounge': '上層休息室',
-    'Sunlit studio above the living space': '客廽上方的陽光工作室',
-    'Over the living room': '客廽上方',
-    'From the mezzanine edge': '從夾層邊緣',
-    'The snug': '小客廽',
-    'A fire under the living room': '客廽下方的壁爐',
-    'The bedroom': '臥室',
-    'Sleeping on the garden': '面向花園的睡眠空間',
-    'The lower garden': '下層花園',
-    'The house from below': '從下方看房屋',
-    'Through the cut': '穿過切口',
-    'Section A-A, opened at eye height': '剖面 A-A，於視線高度開啟',
-    'Back through the cut': '再次穿過切口',
-    'The house opens at A-A again': '房屋再次於 A-A 開啟'
-  };
-  function replace() {
-    document.querySelectorAll('.room b, .room .nt, #lcap, .hint, .sub, .end .sub2').forEach(el => {
-      let t = el.textContent;
-      for (const [en, zh] of Object.entries(map)) {
-        if (t.includes(en)) t = t.replace(en, zh);
-      }
-      if (t !== el.textContent) el.textContent = t;
-    });
-  }
-  setInterval(replace, 300);
-  setTimeout(replace, 1000);
-})();
-</script>
 </body>
 </html>
