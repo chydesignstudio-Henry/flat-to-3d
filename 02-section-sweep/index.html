@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cota</title>
+<title>Cota · 剖面</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --paper: #f2efe7;
     --ink: #1d1c19;
     --accent: #e85d04;
     --mono: 'IBM Plex Mono', ui-monospace, monospace;
-    --display: 'Chakra Petch', sans-serif;
-    --sans: 'Chakra Petch', sans-serif;
+    --display: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+    --sans: 'Chakra Petch', 'Noto Sans TC', sans-serif;
     --g: 28px;
   }
   html, body { margin: 0; background: var(--paper); color: var(--ink); }
@@ -197,11 +197,11 @@
 <div id="hud">
   <div id="cad-hud"><div class="ch-c tl"></div><div class="ch-c tr"></div><div class="ch-c bl"></div><div class="ch-c br"></div></div>
   <div class="brand">Cota</div>
-  <a class="cta" href="#start">Start a project</a>
-  <h1 class="head"><span class="ln"><span>See the house</span></span><span class="ln"><span><em>in section.</em></span></span></h1>
-  <p class="sub">A house on a slope, cut open at A-A. Scroll and walk in through the cut.</p>
+  <a class="cta" href="#start">開始專案</a>
+  <h1 class="head"><span class="ln"><span>看見房屋</span></span><span class="ln"><span><em>在剖面中。</em></span></span></h1>
+  <p class="sub">一座位於斜坡上的房屋，於 A-A 切開。捲動並從切口走入。</p>
   <div class="chip"></div>
-  <div class="hint">Scroll to open the lens</div>
+  <div class="hint">捲動以開啟鏡頭</div>
   <div class="room">
     <div class="r-txt"><span class="lv"></span><b></b><span class="nt"></span></div>
   </div>
@@ -224,17 +224,17 @@
     </svg>
   </div>
   <div class="end">
-    <h2><span class="ln"><span>We draw it first.</span></span><span class="ln"><span><em>Then we build it.</em></span></span></h2>
-    <p class="sub2">Cota is a small studio for houses on difficult ground. Every project starts with a section like this one.</p>
-    <a class="btn" href="#start">Start a project<i>&rarr;</i></a>
+    <h2><span class="ln"><span>我們先繪製它。</span></span><span class="ln"><span><em>然後建造它。</em></span></span></h2>
+    <p class="sub2">Cota 是一家專注於困難地形房屋的小型工作室。每個專案都從這樣的剖面開始。</p>
+    <a class="btn" href="#start">開始專案<i>&rarr;</i></a>
   </div>
   <div id="tb">
     <div class="frame"></div>
-    <div class="t1 fade">Section A-A</div>
+    <div class="t1 fade">剖面 A-A</div>
     <div class="rule fade"></div><div class="vr fade"></div>
-    <div class="rows fade"><div>House on a slope</div><div class="scale">Scale 1:100</div><div>Sheet A-301</div></div>
+    <div class="rows fade"><div>斜坡上的房屋</div><div class="scale">比例 1:100</div><div>圖紙 A-301</div></div>
     <div class="kp"></div>
-    <div class="stamp">Built 2026</div>
+    <div class="stamp">建於 2026</div>
   </div>
 </div>
 <svg id="kp" viewBox="-0.5 -10.5 27 16.5" aria-hidden="true">
@@ -246,7 +246,7 @@
   <g id="kpa0" opacity="0"><path stroke="#e85d04" data-w="1.2" d="M0.4 0 V-2 M-0.25 -1.2 L0.4 -2 L1.05 -1.2"/><text x="0.4" y="-2.7" text-anchor="middle">A</text></g>
   <g id="kpa1" opacity="0"><path stroke="#e85d04" data-w="1.2" d="M25.6 0 V-2 M24.95 -1.2 L25.6 -2 L26.25 -1.2"/><text x="25.6" y="-2.7" text-anchor="middle">A</text></g>
 </svg>
-<div id="lcap"><div>Section A-A</div><div>Loading <span id="lnum">000</span></div></div>
+<div id="lcap"><div>剖面 A-A</div><div>載入中 <span id="lnum">000</span></div></div>
 <main id="track"></main>
 <script>
   window.__T0 = performance.now();
