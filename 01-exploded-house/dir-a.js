@@ -69,7 +69,7 @@ export async function build(labels) {
   }
 
   // 01 Floor: slab on strip footings, the oak boards, sunlit floor patches, the furniture that stands on it
-  const L1 = layer('floor', '01', '樓板', '混凝土板置於條形基礎上', 1);
+  const L1 = layer('floor', '01', 'Floor', 'Concrete slab on strip footings', 1);
   L1.part.add('concrete', bx(-7.55, 0, -3.6, 7.5, FL, 3.6),
     bx(-7.55, -0.7, -3.6, 7.5, 0, -3.1), bx(-7.55, -0.7, 3.1, 7.5, 0, 3.6),
     bx(-7.55, -0.7, -3.1, -7.05, 0, 3.1), bx(7.0, -0.7, -3.1, 7.5, 0, 3.1));
@@ -151,7 +151,7 @@ export async function build(labels) {
   segs(L1.g, boards, hatchMat);
 
   // 02 Structure: CLT walls, the oak box with its furnished mezzanine loft, the kitchen
-  const L2 = layer('structure', '02', '結構', '交叉層壓木材，120 mm', 2);
+  const L2 = layer('structure', '02', 'Structure', 'Cross-laminated timber, 120 mm', 2);
   const longOut = [[-7.28, 0], [6.2, 0], [6.2, 2.4], [XE, 2.4], [XE, EH], [-7.28, EH]];
   L2.part.add('white', panel(longOut, SOUTH.map(rect), TH).applyMatrix4(M.alongX(ZI, FL)));
   L2.part.add('white', panel(longOut, NORTH.map(rect), TH).applyMatrix4(M.alongX(-ZO, FL)));
@@ -225,7 +225,7 @@ export async function build(labels) {
   segs(L2.g, joints, hatchMat);
 
   // 03 Glazing (rides with the walls, pulled out sideways): the glass gable, the windows, a sliding door
-  const L3 = layer('glazing', '03', '玻璃', '三層玻璃，橡木框', 2);
+  const L3 = layer('glazing', '03', 'Glazing', 'Triple glazed, oak frames', 2);
   const gE = L3.side(V(1, 0, 0)), gS = L3.side(V(0, 0, 1)), gN = L3.side(V(0, 0, -1)), gW = L3.side(V(-1, 0, 0));
   const mull = [-ZI, -1.9, -0.6, 0.6, 1.9, ZI];
   for (const z of mull) { const zz = clamp(z, -ZI + 0.04, ZI - 0.04); gE.part.add('frame', bx(XG - 0.06, F, zz - 0.04, XG + 0.06, UL(Math.abs(zz) + 0.04) - 0.02, zz + 0.04)); }
@@ -249,24 +249,284 @@ export async function build(labels) {
   for (const o of SOUTH) win4(gS.part, 'x', ZI, ZO, o);
   for (const o of NORTH) win4(gN.part, 'x', -ZO, -ZI, o);
   for (const [a0, v0, a1, v1] of WEST) win4(gW.part, 'z', XW, XW + TH, [a0, v0, a1, v1]);
-  gW.part.add('frame', ring(0.36, 0.42, TH).applyMatrix4(new THREE.Matrix4().makeTranslation(XW + TH, FL + ROUND.c[1] || 4.35)));
+  gW.part.add('frame', ring(0.36, 0.42, TH).applyMatrix4(new THREE.Matrix4().makeTranslation(XW + TH, FL + ROUND.c[1], 0).multiply(new THREE.Matrix4().makeRotationY(-Math.PI / 2))));
+  gW.part.add('glass', new THREE.CylinderGeometry(0.36, 0.36, 0.02, 40).rotateZ(Math.PI / 2).translate(XW + TH / 2, FL + ROUND.c[1], 0));
 
-  // Continue with remaining layers... (truncated for brevity in this example, but full file would be included)
-  // NOTE: In actual upload, the full modified file content from /tmp/dir-a.js should be used.
-  // The chrome object has been updated to Traditional Chinese as prepared.
+  // 04 Cladding: vertical larch boards on battens, pulled out from each wall
+  const L4 = layer('cladding', '04', 'Cladding', 'Vertical larch boards, 22 × 140', 2);
+  const cS = L4.side(V(0, 0, 1)), cN = L4.side(V(0, 0, -1)), cW = L4.side(V(-1, 0, 0));
+  const BW = 0.14, BG = 0.026, c0 = FL - 0.25;
+  function boardsAlong(holes, a0, a1, top, notch) {
+    const out = [];
+    for (let a = a0; a + BW <= a1 + 1e-6; a += BW + BG) {
+      const b = a + BW; let spans = [[c0, top(a, b)]];
+      if (notch && b > notch[0]) spans = [[FL + notch[1], top(a, b)]];
+      for (const h of holes) {
+        const [u0, v0, u1, v1] = h.r ? [h.c[0] - h.r, h.c[1] - h.r, h.c[0] + h.r, h.c[1] + h.r] : h;
+        if (b > u0 && a < u1) spans = spans.flatMap(([s, e]) => [[s, Math.min(e, FL + v0 - 0.03)], [Math.max(s, FL + v1 + 0.03), e]]).filter(([s, e]) => e - s > 0.05);
+      }
+      for (const [s, e] of spans) out.push([a, b, s, e]);
+    }
+    return out;
+  }
+  const flat = () => FL + EH + PL;
+  for (const [a, b, s, e] of boardsAlong(SOUTH, -7.452, XE, flat, [6.2, 2.4])) cS.part.add('clad', bx(a, s, ZO + 0.03, b, e, ZO + 0.052));
+  for (const [a, b, s, e] of boardsAlong(NORTH, -7.452, XE, flat, [6.2, 2.4])) cN.part.add('clad', bx(a, s, -ZO - 0.052, b, e, -ZO - 0.03));
+  const gTop = (a, b) => UL(Math.max(Math.abs(a), Math.abs(b)));
+  for (const [a, b, s, e] of boardsAlong([...WEST, ROUND], -ZO - 0.052, ZO + 0.052, gTop)) cW.part.add('clad', bx(XW - 0.052, s, a, XW - 0.03, e, b));
+
+  // 05 Roof structure and 06 Roof: built in the plane of each slope, then turned into place
+  const slopeM = (side) => {
+    const s = Math.sin(40 * D2R), c = CP;
+    const m = new THREE.Matrix4();
+    if (side > 0) m.makeBasis(V(1, 0, 0), V(0, c, s), V(0, -s, c)); else m.makeBasis(V(-1, 0, 0), V(0, c, -s), V(0, -s, -c));
+    return m.setPosition(0, Y0, 0);
+  };
+  const MS = slopeM(1), MN = slopeM(-1);
+  const sb = (side, x0, x1, w0, w1, t0, t1) => (side > 0 ? bx(x0, w0, t0, x1, w1, t1) : bx(-x1, w0, t0, -x0, w1, t1)).applyMatrix4(side > 0 ? MS : MN);
+  const L5 = layer('rafters', '05', 'Roof structure', 'Glulam ridge, rafters at 600', 3);
+  for (const side of [1, -1]) {
+    for (let x = -XR + 0.04; x <= XR; x += 0.6) L5.part.add('rafter', sb(side, x - 0.04, x + 0.04, 0, 0.22, -0.22 * TP, T));
+    L5.part.add('rafter', sb(side, -XR, XR, 0, 0.22, T - 0.03, T));
+  }
+  L5.part.add('rafter', bx(-XR, Y0 - 0.28, -0.08, XR, Y0, 0.08));
+  for (const x of [-XR + 0.02, -3.7, 0.2, XG, XR - 0.02]) {
+    L5.part.add('steel', bx(x - 0.05, Y0 - 0.29, -0.09, x + 0.05, Y0 + 0.01, 0.09));
+  }
+  // twin spun-linen pendant lamps suspended from the glulam ridge beam over the oak dining table
+  for (const px of [2.35, 3.25]) {
+    const py0 = F + 1.82, py1 = Y0 - 0.28;
+    L5.part.add('steel', cyl(0.008, py1 - py0, px, py0, 0.22, 8));
+    L5.part.add('shade', cyl(0.20, 0.16, px, py0 - 0.14, 0.22, 32, 0.07));
+  }
+  const L6 = layer('roof', '06', 'Roof', 'Insulated panels, standing-seam zinc', 4);
+  for (const side of [1, -1]) {
+    L6.part.add('white', sb(side, -XR, XR, 0.22, 0.42, -0.42 * TP, T));
+    L6.part.add('seam', sb(side, -XR - 0.02, XR + 0.02, 0.42, 0.44, -0.44 * TP, T + 0.03));
+    for (let x = -XR + 0.2; x < XR; x += 0.45) L6.part.add('seam', sb(side, x - 0.012, x + 0.012, 0.44, 0.48, -0.48 * TP, T + 0.03));
+    // zinc half-round eave gutter along each roof edge
+    L6.part.add('steel', sb(side, -XR - 0.02, XR + 0.02, 0.36, 0.43, T + 0.03, T + 0.1));
+  }
+  const YT = Y0 + 0.48 / CP;
+  L6.part.add('seam', bx(-XR - 0.03, YT - 0.1, -0.11, XR + 0.03, YT + 0.04, 0.11));
+
+  for (const L of layers) { L.part.build(); for (const s of L.subs) s.part.build(); }
+
+  // ---- the stack: how far each level floats, and the order things land
+  const LIFT = { 1: 2.3, 2: 4.9, 3: 10.2, 4: 15.6 };
+  const PULL = { glazing: 3.4, cladding: 6.2 };
+  const ORDER = ['floor', 'structure', 'glazing', 'cladding', 'rafters', 'roof'];
+  const T0 = 0.05, STEP = 0.056, DUR = 0.068;
+  const landAt = id => { const i = ORDER.indexOf(id); return [T0 + i * STEP, T0 + i * STEP + DUR]; };
+
+  // ---- labels in a column right of the drawing, each on its layer's north-east corner
+  const anchor = {
+    floor: [L1.g, V(7.5, 0.15, -3.6)],
+    structure: [L2.g, V(XE, FL + EH, ZO)],
+    glazing: [gE.g, V(XG, UL(ZI) - 0.1, -ZI)],
+    cladding: [cN.g, V(6.0, FL + 1.6, -ZO - 0.052)],
+    rafters: [L5.g, V(XR, Y0 + 0.11 * CP - T * SP, -0.11 * SP - T * CP)],
+    roof: [L6.g, V(XR, Y0 + 0.44 * CP - T * SP, -0.44 * SP - T * CP)],
+  };
+  const SHORT = { rafters: 'Rafters' };
+  for (const L of layers) { const [obj, at] = anchor[L.id]; L.label = labels.add({ no: L.no, name: L.name, short: SHORT[L.id], sub: L.sub, obj, at, rank: 10 - Number(L.no) }); }
+
+  // ---- dotted lines between the floating layers
+  const dash = liveLine(dashMat);
+  const corners = [[-7.4, -3.5], [7.4, -3.5], [7.4, 3.5], [-7.4, 3.5]];
+
+  // ---- camera: the long lens over the whole stack (0.00..0.41), dolly-zoom to the east porch (0.41..0.62),
+  // then a 4-stop interior walkthrough through Dining (0.71), Living & Hearth (0.80), Oak Mezzanine Loft (0.89), and Ridge Panorama (1.00)
+  const keys = [
+    { at: 0, t: [0.2, 10.2, 0], az: 45, el: 27, fov: 1.5, h: 33, sx: -0.02, ph: { h: 61, sx: -0.24, sy: -0.15 } },
+    { at: 0.39, t: [0.2, 10.2, 0], az: 45, el: 27, fov: 1.5, h: 33, sx: -0.02, ph: { h: 61, sx: -0.24, sy: -0.15 } },
+    { at: 0.48, t: [0.4, 3.2, 0], az: 45, el: 27, fov: 1.5, h: 15, sx: 0.2, ph: { h: 40, sx: 0, sy: -0.3 } },
+    { at: 0.52, t: [0.6, 3.0, 0], az: 42, el: 24, fov: 1.6, h: 14, sx: 0.16, ph: { h: 38, sx: 0, sy: -0.24 } },
+    // Porch arrival (dolly-zoom lands on east deck)
+    eyeKey(0.62, [13.8, 1.62, 0.15], [XG, 1.62, 0], 46, { sy: -0.18, ph: eyeKey(0.62, [14.5, 1.62, 0.15], [XG - 1.5, 1.62, 0], 64, { sy: -0.12 }) }),
+    // Stop 1: Threshold & Oak Trestle Dining Table
+    eyeKey(0.71, [4.75, 1.60, 0.35], [0.2, 1.42, -0.65], 54, { sy: -0.10, ph: eyeKey(0.71, [4.85, 1.60, 0.35], [0.2, 1.42, -0.65], 70, { sy: -0.08 }) }),
+    // Waypoint into north kitchen aisle
+    eyeKey(0.75, [3.1, 1.58, -1.50], [-1.6, 1.32, 0.85], 55, { sy: -0.08, ph: eyeKey(0.75, [3.1, 1.58, -1.50], [-1.6, 1.32, 0.85], 72, { sy: -0.06 }) }),
+    // Stop 2: Kitchen, Sunlit Living Lounge & Glowing Wood Stove
+    eyeKey(0.80, [0.55, 1.50, -1.25], [-2.85, 1.15, 1.35], 56, { sy: -0.06, ph: eyeKey(0.80, [0.55, 1.50, -1.25], [-2.85, 1.15, 1.35], 72, { sy: -0.05 }) }),
+    // Ladder crest waypoint passing through the balustrade opening
+    eyeKey(0.85, [-3.45, 4.22, -2.18], [-6.2, 3.65, -0.2], 56, { sy: -0.05, ph: eyeKey(0.85, [-3.45, 4.22, -2.18], [-6.2, 3.65, -0.2], 72, { sy: -0.04 }) }),
+    // Stop 3: Inside the furnished Oak Mezzanine Loft (+3.20m), unobstructed view of platform bed & west oculus
+    eyeKey(0.89, [-4.05, 4.25, -1.65], [-6.55, 3.60, 0.15], 56, { sy: -0.05, ph: eyeKey(0.89, [-4.05, 4.25, -1.65], [-6.55, 3.60, 0.15], 72, { sy: -0.04 }) }),
+    // Stop 4: Pivot on the loft landing looking back east across the 6.6m-high Long Room & glazed gable
+    eyeKey(0.98, [-3.35, 4.18, -1.55], [5.8, 1.85, 0.25], 58, { sy: -0.06, ph: eyeKey(0.98, [-3.35, 4.18, -1.55], [5.8, 1.85, 0.25], 74, { sy: -0.05 }) }),
+    eyeKey(1.0, [-3.35, 4.18, -1.55], [5.8, 1.85, 0.25], 58, { sy: -0.06, ph: eyeKey(1.0, [-3.35, 4.18, -1.55], [5.8, 1.85, 0.25], 74, { sy: -0.05 }) }),
+  ];
+  keys[4].easeFn = t => ease(t);
+
+  const STOPS = [
+    { id: 'porch', a: 0.53, b: 0.66, lv: 'STAGE 00 // SITE ASSEMBLY COMPLETE', t: 'CLOSED ON SITE · DAY NINE', m: 'Six layers  ·  one crane day  ·  no wet trades' },
+    { id: 'dining', a: 0.67, b: 0.75, lv: 'STOP 01 // EAST THRESHOLD · +0.33M', t: 'THE DINING TABLE', m: 'Glazed east gable  ·  oak trestle table  ·  spun pendants' },
+    { id: 'living', a: 0.76, b: 0.84, lv: 'STOP 02 // LIVING & HEARTH · +0.33M', t: 'KITCHEN & LOUNGE', m: 'South window light  ·  linen sofa  ·  cast-iron wood stove' },
+    { id: 'loft', a: 0.85, b: 0.93, lv: 'STOP 03 // MEZZANINE LOFT · +3.20M', t: 'THE OAK LOFT', m: 'Platform bed  ·  west oculus window  ·  timber ladder' },
+    { id: 'ridge', a: 0.94, b: 1.01, lv: 'STOP 04 // CATHEDRAL VOLUME · 96 M²', t: 'THE LONG ROOM', m: '6.6 × 9.4 m  ·  ridge +6.34 m  ·  CLT, larch & zinc' },
+  ];
+
+  function update(p) {
+    const land = {};
+    for (const id of ORDER) { const [a, b] = landAt(id); land[id] = ease(win(p, a, b)); }
+    const lv = { 1: 1 - land.floor, 2: 1 - land.structure, 3: 1 - land.rafters, 4: 1 - land.roof };
+    const lift = {}; let acc = 0, prev = 0;
+    for (const k of [1, 2, 3, 4]) { acc += (LIFT[k] - prev) * lv[k]; prev = LIFT[k]; lift[k] = acc; }
+    for (const L of layers) {
+      L.g.position.y = lift[L.level];
+      const pull = PULL[L.id] ? PULL[L.id] * (1 - land[L.id]) : 0;
+      for (const s of L.subs) s.g.position.copy(s.dir).multiplyScalar(pull);
+      // the layer in the air while it lands is drawn in the accent colour
+      const [a, b] = landAt(L.id);
+      const cur = ORDER.reduce((c, id) => p >= landAt(id)[0] - 0.006 ? id : c, null);
+      const on = L.id === cur && p < b + 0.012;
+      for (const m of L.lines) m.color.set(on ? ACCENT : INK);
+      L.label.on = on;
+      L.label.op = (p > b + 0.012 ? 0.5 : 1) * (1 - win(p, 0.40, 0.45));
+      L.label.dy = 0;
+    }
+    // the sliding door opens as the camera reaches the porch
+    L3.door.g.position.z = -1.25 * ease(win(p, 0.54, 0.64));
+
+    // dotted lines: plan to floor, floor to walls, walls to rafters, rafters to roof, and the sideways pulls
+    const ls = [];
+    const y1 = lift[1], y2 = lift[2], y3 = lift[3], y4 = lift[4];
+    for (const [x, z] of corners) {
+      if (y1 > 0.05) ls.push([x * 7.55 / 7.4, -0.7 + y1, z * 3.6 / 3.5, x * 7.55 / 7.4, 0, z * 3.6 / 3.5]);
+      if (y2 - y1 > 0.05) ls.push([x, FL + y2, z, x, FL + y1, z]);
+      if (y3 - y2 > 0.05) ls.push([x, FL + EH + PL + y3, z, x, FL + EH + PL + y2, z]);
+      const ez = Math.sign(z) * (T * CP), ey = Y0 - T * Math.sin(40 * D2R);
+      if (y4 - y3 > 0.05) ls.push([Math.sign(x) * XR, ey + 0.22 * CP + y4, ez + Math.sign(z) * 0.22 * Math.sin(40 * D2R), Math.sign(x) * XR, ey + 0.22 * CP + y3, ez + Math.sign(z) * 0.22 * Math.sin(40 * D2R)]);
+    }
+    const gp = PULL.glazing * (1 - land.glazing), cp = PULL.cladding * (1 - land.cladding);
+    if (gp > 0.05) for (const z of [-ZI, ZI]) for (const y of [FL, UL(ZI)]) ls.push([XG + gp, y + y2, z, XE, y + y2, z]);
+    if (cp > 0.05) for (const x of [-7.45, XE]) for (const y of [c0, FL + EH + PL]) { ls.push([x, y + y2, ZO + 0.05 + cp, x, y + y2, ZO]); ls.push([x, y + y2, -ZO - 0.05 - cp, x, y + y2, -ZO]); }
+    dash.set(ls);
+
+    const landed = ORDER.filter(id => land[id] > 0.98).length;
+    let cap = '', capOp = 0, activeStop = p < 0.52 ? 'axo' : 'porch';
+    for (const s of STOPS) {
+      const fadeOut = s.id === 'ridge' ? 1 : (1 - win(p, s.b - 0.025, s.b));
+      const v = win(p, s.a, s.a + 0.025) * fadeOut;
+      if (v > capOp) {
+        capOp = v;
+        cap = `<span class="lv">${s.lv}</span><span class="t">${s.t}</span><span class="m">${s.m}</span>`;
+      }
+      if (p >= s.a - 0.01) activeStop = s.id;
+    }
+
+    return {
+      hero: 1 - clamp((p - 0.43) / 0.05),
+      counter: p < 0.54 ? `Layer <b>${String(Math.min(6, landed + (p > T0 ? 1 : 0))).padStart(2, '0')}</b> / 06` : '',
+      hint: p < 0.42 ? 'Scroll to build it' : p < 0.65 ? 'Scroll to walk inside' : p < 0.95 ? 'Scroll through the house' : '',
+      cap,
+      capOp,
+      stop: activeStop,
+    };
+  }
 
   return {
+    update, keys, R: 70,
+    colX: () => ctx.phone ? ctx.W - 100 : ctx.W * 0.725,
+    draw: { dir: [0, 1, 0], radial: 0, min: -1, max: 23, soft: 1.4 },
+    radar: {
+      scale: '1:100',
+      viewBox: '-8.6 -4.6 17.8 9.2',
+      plan: 'M-7.4 -3.5 H7.4 V3.5 H-7.4 Z M-3.7 -3.5 V3.5 M5.9 -3.5 V3.5 M-7.4 0 H-3.7 M-2.9 -3.4 H3.1 V-2.75 H-2.9 Z M1.7 -0.25 H3.9 V0.75 H1.7 Z M-2.9 1.0 H-0.6 V1.9 H-2.9 Z',
+      strokeW: 0.22, dotR: 0.65, coneW: 0.18, coneLen: 3.2,
+      clampX: [-7.4, 7.6], clampZ: [-3.4, 3.4],
+      axoDot: [6.8, 2.4], axoAng: -2.35,
+      zones: [
+        { stop: 'loft', p: 0.89, tag: '03 // OAK LOFT +3.20M', x: -7.4, y: -3.5, w: 3.7, h: 7.0 },
+        { stop: 'living', p: 0.80, tag: '02 // LIVING & HEARTH', x: -3.7, y: -3.5, w: 5.2, h: 7.0 },
+        { stop: 'dining', p: 0.71, tag: '01 // DINING TABLE', x: 1.5, y: -3.5, w: 4.4, h: 7.0 },
+        { stop: 'porch', p: 0.62, tag: 'PORCH // +0.33M', x: 5.9, y: -3.5, w: 1.9, h: 7.0 },
+      ],
+      stops: [
+        { stop: 'axo', p: 0.18, tag: 'AXO STACK // 01-06', label: 'AXO' },
+        { stop: 'porch', p: 0.62, tag: 'PORCH // +0.33M', label: 'PORCH' },
+        { stop: 'dining', p: 0.71, tag: '01 // DINING TABLE', label: 'DINING' },
+        { stop: 'living', p: 0.80, tag: '02 // LIVING & HEARTH', label: 'LIVING' },
+        { stop: 'loft', p: 0.89, tag: '03 // OAK LOFT +3.20M', label: 'LOFT' },
+        { stop: 'ridge', p: 0.98, tag: '04 // THE LONG ROOM', label: 'RIDGE' },
+      ],
+    },
     chrome: {
-      title: 'A · 面板',
+      title: 'A · The Board',
       dwg: 'AXO.04',
-      brand: 'Purlin', brandSub: '木構造住宅',
-      nav: '房屋     工坊     日誌', cta: '開始一棟房屋',
-      kicker: '軸測圖 · 圖紙 A-04 · 1:100',
-      loader: '正在繪製圖紙 A-04',
-      h1: '房屋如何<br>組合<em>而成。</em>',
-      lede: '六層構件，在工坊製作並於現場九天內完成。捲動以組裝房屋，接著走進長室並登上橡木閣樓。',
-      spec: [['房屋', '長室'], ['面積', '96 m² + 閣樓'], ['結構', 'CLT、落葉松、鋅']],
-      hint: '捲動以建造',
+      brand: 'Purlin', brandSub: 'Timber houses',
+      nav: 'Houses     Workshop     Journal', cta: 'Start a house',
+      kicker: 'Axonometric · Sheet A-04 · 1:100',
+      loader: 'Plotting sheet A-04',
+      h1: 'How a house<br>goes <em>together.</em>',
+      lede: 'Six layers, made in our workshop and closed on site in nine days. Scroll to assemble the house, then walk inside through the Long Room and up to the oak loft.',
+      spec: [['House', 'The Long Room'], ['Area', '96 m² + Loft'], ['Frame', 'CLT, larch, zinc']],
+      hint: 'Scroll to build it',
     },
   };
 }
+
+// ---- the ground floor plan, drawn once into a canvas
+function drawPlan() {
+  const S = 100, X = x => (x + 12) * S, Y = z => (z + 8) * S;
+  return canvasTex(2400, 1600, (g) => {
+    g.fillStyle = '#f2efe7'; g.fillRect(0, 0, 2400, 1600);
+    g.strokeStyle = INK; g.lineWidth = 2.2; g.strokeRect(36, 36, 2328, 1528);
+    g.lineWidth = 1; g.strokeRect(46, 46, 2308, 1508);
+    const line = (x0, z0, x1, z1, w = 2, dash = []) => { g.setLineDash(dash); g.lineWidth = w; g.beginPath(); g.moveTo(X(x0), Y(z0)); g.lineTo(X(x1), Y(z1)); g.stroke(); g.setLineDash([]); };
+    const box = (x0, z0, x1, z1, w = 2, fill) => { if (fill) { g.fillStyle = fill; g.fillRect(X(x0), Y(z0), X(x1) - X(x0), Y(z1) - Y(z0)); } g.lineWidth = w; g.strokeRect(X(x0), Y(z0), X(x1) - X(x0), Y(z1) - Y(z0)); };
+    g.strokeStyle = INK; g.fillStyle = INK;
+    // grid with bubbles
+    g.font = '500 26px "IBM Plex Mono"'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    [[-7.4, 'A'], [-3.7, 'B'], [XG, 'C'], [7.4, 'D']].forEach(([x, n]) => { line(x, -6.6, x, 6.0, 1.2, [24, 8, 4, 8]); g.beginPath(); g.arc(X(x), Y(-6.95), 24, 0, 7); g.stroke(); g.fillText(n, X(x), Y(-6.95)); });
+    [[-3.5, '1'], [0, '2'], [3.5, '3']].forEach(([z, n]) => { line(-10.2, z, 9.6, z, 1.2, [24, 8, 4, 8]); g.beginPath(); g.arc(X(-10.55), Y(z), 24, 0, 7); g.stroke(); g.fillText(n, X(-10.55), Y(z)); });
+    // roof line
+    line(-XR, -4.05, XR, -4.05, 1.5, [14, 10]); line(-XR, 4.05, XR, 4.05, 1.5, [14, 10]); line(-XR, -4.05, -XR, 4.05, 1.5, [14, 10]); line(XR, -4.05, XR, 4.05, 1.5, [14, 10]);
+    // walls in poché, openings left white
+    g.fillStyle = INK;
+    const wallX = (z0, z1, holes) => { let a = -7.45; const cuts = [...holes.map(h => [h[0], h[2]]), [6.2, XE]].sort((p, q) => p[0] - q[0]); for (const [u0, u1] of cuts) { g.fillRect(X(a), Y(z0), X(u0) - X(a), Y(z1) - Y(z0)); a = u1; } };
+    wallX(ZI, ZO + 0.05, SOUTH); wallX(-ZO - 0.05, -ZI, NORTH);
+    let a = -ZO - 0.05; for (const [u0, , u1] of [...WEST].sort((p, q) => p[0] - q[0])) { g.fillRect(X(-7.45), Y(a), X(-7.28) - X(-7.45), Y(u0) - Y(a)); a = u1; } g.fillRect(X(-7.45), Y(a), X(-7.28) - X(-7.45), Y(ZO + 0.05) - Y(a));
+    // glazing as thin double lines
+    for (const [u0, , u1] of SOUTH) { line(u0, ZO - 0.03, u1, ZO - 0.03, 1.5); line(u0, ZI + 0.03, u1, ZI + 0.03, 1.5); }
+    for (const [u0, , u1] of NORTH) { line(u0, -ZO + 0.03, u1, -ZO + 0.03, 1.5); line(u0, -ZI - 0.03, u1, -ZI - 0.03, 1.5); }
+    line(XG - 0.04, -ZI, XG - 0.04, ZI, 1.5); line(XG + 0.04, -ZI, XG + 0.04, ZI, 1.5); line(XG + 0.1, -0.62, XG + 0.1, 0.62, 3);
+    // the box, its doors and fittings
+    box(-3.82, -ZI, -3.7, ZI, 1, INK); g.fillStyle = '#f2efe7'; g.fillRect(X(-3.83), Y(-1.6), 14, Y(-0.7) - Y(-1.6)); g.fillRect(X(-3.83), Y(0.7), 14, Y(1.5) - Y(0.7)); g.fillStyle = INK;
+    box(-7.28, -0.05, -3.82, 0.05, 1, INK);
+    g.lineWidth = 1.2; g.beginPath(); g.arc(X(-3.7), Y(-0.7), 0.9 * S, Math.PI, 1.5 * Math.PI); g.stroke(); line(-3.7, -0.7, -4.6, -0.7, 1.5);
+    g.beginPath(); g.arc(X(-3.7), Y(1.5), 0.8 * S, 0.5 * Math.PI, Math.PI); g.stroke(); line(-3.7, 1.5, -4.5, 1.5, 1.5);
+    box(-7.1, -3.2, -5.2, -1.2, 1.5); box(-7.1, -3.2, -6.6, -2.2, 1); box(-7.1, -2.15, -6.6, -1.25, 1);
+    box(-7.1, 0.4, -6.4, 2.2, 1.5); box(-5.6, 2.6, -4.9, 3.2, 1.5); g.beginPath(); g.ellipse(X(-4.4), Y(0.55), 26, 20, 0, 0, 7); g.stroke();
+    // kitchen, table, sofa, rug
+    box(-2.9, -ZI, -1.7, -2.76, 1.5); box(-1.7, -ZI, 3.1, -2.76, 1.5); g.beginPath(); g.ellipse(X(0.6), Y(-3.07), 24, 16, 0, 0, 7); g.stroke();
+    box(1.8, -0.2, 3.9, 0.75, 1.5); box(1.9, 0.95, 3.8, 1.28, 1); for (const x of [2.2, 2.85, 3.5]) box(x - 0.21, -0.8, x + 0.21, -0.36, 1);
+    box(-2.9, 1.0, -0.6, 1.9, 1.5); box(-2.9, 1.0, -0.6, 1.22, 1); line(-3.2, 0.75, -0.3, 0.75, 1, [8, 6]); line(-3.2, 3.0, -0.3, 3.0, 1, [8, 6]);
+    g.beginPath(); g.arc(X(-1.75), Y(2.4), 40, 0, 7); g.stroke();
+    // porch boards and steps
+    for (let z = -ZI + 0.14; z < ZI; z += 0.14) line(XG + 0.06, z, XE, z, 0.8);
+    // room names & elevation datums
+    g.fillStyle = INK; g.font = '700 32px "Chakra Petch"';
+    g.fillText('LIVING', X(-1.6), Y(-0.5)); g.fillText('KITCHEN', X(1.3), Y(-1.9)); g.fillText('PORCH', X(6.65), Y(-1.6));
+    g.font = '600 26px "Chakra Petch"'; g.fillText('BED', X(-5.6), Y(-1.9)); g.fillText('BATH', X(-5.8), Y(1.6));
+    g.font = '400 20px "IBM Plex Mono"'; g.fillText('62 M² · FFL +0.33', X(-1.6), Y(-0.15));
+    g.fillText('DECK +0.30', X(6.65), Y(-1.25));
+    // dimensions along the south side
+    const dim = (x0, x1, z, t) => { line(x0, z, x1, z, 1.2); for (const x of [x0, x1]) line(x - 0.12, z + 0.12, x + 0.12, z - 0.12, 2); g.font = '400 22px "IBM Plex Mono"'; g.fillText(t, X((x0 + x1) / 2), Y(z) - 18); };
+    dim(-7.45, XE, 5.0, '14 850'); dim(-7.45, -3.7, 5.7, '3 750'); dim(-3.7, XG, 5.7, '9 600'); dim(XG, XE, 5.7, '1 500');
+    g.save(); g.translate(X(9.1), Y(0)); g.rotate(-Math.PI / 2); g.font = '400 22px "IBM Plex Mono"'; g.fillText('7 100', 0, -18); g.restore();
+    line(9.1, -3.55, 9.1, 3.55, 1.2);
+    // north arrow, scale bar, and title block
+    g.beginPath(); g.arc(X(10.3), Y(-6.4), 34, 0, 7); g.stroke(); g.beginPath(); g.moveTo(X(10.3), Y(-6.4) - 44); g.lineTo(X(10.3) - 12, Y(-6.4) + 10); g.lineTo(X(10.3) + 12, Y(-6.4) + 10); g.closePath(); g.fill();
+    g.textAlign = 'left'; g.font = '700 30px "Chakra Petch"'; g.fillText('GROUND FLOOR', X(-10.9), Y(6.95)); g.font = '400 20px "IBM Plex Mono"'; g.fillText('THE LONG ROOM · 1:100 · DWG A-01', X(-10.9), Y(7.3));
+    for (let i = 0; i < 5; i++) {
+      g.fillStyle = i % 2 === 0 ? INK : '#f2efe7';
+      g.fillRect(X(6.5 + i * 0.8), Y(7.02), 0.8 * S, 10);
+      g.strokeRect(X(6.5 + i * 0.8), Y(7.02), 0.8 * S, 10);
+    }
+    g.fillStyle = INK; g.font = '500 18px "IBM Plex Mono"'; g.fillText('0', X(6.5), Y(7.32)); g.fillText('5 M', X(10.2), Y(7.32));
+  });
+}
+
