@@ -1,61 +1,82 @@
 <!doctype html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cota · 剖面</title>
+<title>Cota</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --paper: #f2efe7; --ink: #1d1c19; --accent: #e85d04; --mono: 'IBM Plex Mono', ui-monospace, monospace; --display: 'Chakra Petch', 'Noto Sans TC', sans-serif; --g: 28px; }
+  :root { --paper: #f2efe7; --ink: #1d1c19; --accent: #e85d04; --mono: 'IBM Plex Mono', ui-monospace, monospace; --display: 'Chakra Petch', sans-serif; --g: 28px; }
   html, body { margin: 0; background: var(--paper); color: var(--ink); }
   body { overscroll-behavior: none; -webkit-font-smoothing: antialiased; }
   #gl { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
-  #ov { position: fixed; inset: 0; pointer-events: none; }
+  #ov { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  #ov text { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; fill: var(--ink); }
   #hud { position: fixed; inset: 0; pointer-events: none; }
   #hud > * { position: absolute; }
+  #cad-hud { display: block; inset: 12px; pointer-events: none; z-index: 2; }
+  #cad-hud .ch-c { position: absolute; width: 14px; height: 14px; border-color: rgba(29,28,25,.45); border-style: solid; }
+  #cad-hud .tl { left: 0; top: 0; border-width: 1.5px 0 0 1.5px; }
+  #cad-hud .tr { right: 0; top: 0; border-width: 1.5px 1.5px 0 0; }
+  #cad-hud .bl { left: 0; bottom: 0; border-width: 0 0 1.5px 1.5px; }
+  #cad-hud .br { right: 0; bottom: 0; border-width: 0 1.5px 1.5px 0; }
   .brand { left: var(--g); top: 20px; font: 700 14px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; background: var(--ink); color: var(--paper); padding: 8px 13px; opacity: 0; }
   .cta { right: var(--g); top: 20px; font: 600 10.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; background: rgba(242,239,231,.94); border: 1.5px solid var(--ink); padding: 8px 14px; opacity: 0; pointer-events: auto; color: var(--ink); text-decoration: none; }
   .head { left: var(--g); top: 80px; font: 600 52px/0.98 var(--display); letter-spacing: -.01em; text-transform: uppercase; margin: 0; }
   .head .ln { display: block; overflow: hidden; }
   .head .ln > span { display: block; transform: translateY(125%); opacity: 0; }
-  .head em { font-style: normal; color: var(--accent); background: rgba(232,93,4,.1); padding: 0 8px; border-left: 3px solid var(--accent); }
+  .head em { font-style: normal; color: var(--accent); }
   .sub { left: var(--g); top: 202px; font: 500 10.5px/1.6 var(--mono); letter-spacing: .06em; max-width: 310px; text-transform: uppercase; opacity: 0; margin: 0; }
-  .hint { left: 50%; bottom: 24px; font: 500 10px var(--mono); letter-spacing: .2em; text-transform: uppercase; opacity: 0; white-space: nowrap; background: rgba(242,239,231,.88); padding: 5px 10px; border: 1px solid rgba(29,28,25,.2); }
-  .end { left: var(--g); top: 80px; visibility: hidden; pointer-events: auto; }
-  .end h2 { margin: 0; font: 600 52px/0.98 var(--display); letter-spacing: -.01em; text-transform: uppercase; }
-  .end .ln { display: block; overflow: hidden; }
-  .end .ln > span { display: block; transform: translateY(110%); }
-  .end em { font-style: normal; color: var(--accent); }
-  .end .sub2 { margin: 18px 0 0 2px; font: 500 10.5px/1.6 var(--mono); letter-spacing: .06em; max-width: 330px; text-transform: uppercase; opacity: 0; }
-  .end .btn { display: inline-block; margin: 22px 0 0; font: 600 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--paper); background: var(--ink); padding: 12px 18px; text-decoration: none; opacity: 0; }
-  #lcap { position: fixed; left: 50%; top: 50%; transform: translate(-50%,124px); text-align: center; font: 500 10.5px/1.9 var(--mono); letter-spacing: .2em; text-transform: uppercase; white-space: nowrap; }
+  .hint { left: 50%; bottom: 24px; font: 500 10px var(--mono); letter-spacing: .2em; text-transform: uppercase; opacity: 0; white-space: nowrap; background: rgba(242,239,231,.88); padding: 5px 10px; }
+  #tb { right: var(--g); bottom: 26px; width: 272px; height: 112px; font: 400 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  #tb .frame { position: absolute; inset: 0; border: 1.5px solid var(--ink); background: var(--paper); }
+  #tb .t1 { position: absolute; left: 14px; top: 12px; font: 600 15px var(--display); }
+  #tb .rows { position: absolute; left: 14px; top: 52px; line-height: 18px; }
+  #tb .kp { position: absolute; left: 186px; top: 47px; width: 76px; height: 58px; }
+  #tb .stamp { position: absolute; right: 96px; top: 50px; padding: 4px 8px; border: 1.5px solid var(--accent); color: var(--accent); }
+  #kp { position: fixed; left: 0; top: 0; width: 260px; height: 159px; overflow: visible; pointer-events: none; }
+  #lcap { position: fixed; left: 50%; top: 50%; transform: translate(-50%,124px); text-align: center; font: 500 10.5px/1.9 var(--mono); letter-spacing: .2em; text-transform: uppercase; }
   #lcap span { color: var(--accent); font-weight: 600; }
   #track { height: 2800vh; }
+  .room { left: var(--g); bottom: 64px; opacity: 0; display: flex; flex-direction: column; gap: 4px; background: rgba(29,28,25,.93); color: var(--paper); padding: 14px 18px; border-left: 3px solid var(--accent); }
+  .room b { font: 600 32px/1 var(--display); text-transform: uppercase; }
+  .end { left: var(--g); top: 80px; visibility: hidden; pointer-events: auto; }
+  .end h2 { margin: 0; font: 600 52px/0.98 var(--display); }
+  .end .ln { display: block; overflow: hidden; }
+  .end .ln > span { display: block; transform: translateY(110%); }
+  .end .sub2 { margin: 18px 0 0 2px; font: 500 10.5px/1.6 var(--mono); max-width: 330px; opacity: 0; }
+  .end .btn { display: inline-block; margin: 22px 0 0; font: 600 11px var(--mono); color: var(--paper); background: var(--ink); padding: 12px 18px; text-decoration: none; opacity: 0; }
 </style>
 </head>
 <body>
 <canvas id="gl"></canvas>
 <svg id="ov" aria-hidden="true"></svg>
 <div id="hud">
+  <div id="cad-hud"><div class="ch-c tl"></div><div class="ch-c tr"></div><div class="ch-c bl"></div><div class="ch-c br"></div></div>
   <div class="brand">Cota</div>
-  <a class="cta" href="#start">開始專案</a>
-  <h1 class="head"><span class="ln"><span>看見房屋</span></span><span class="ln"><span><em>在剖面中。</em></span></span></h1>
-  <p class="sub">一座位於斜坡上的房屋，於 A-A 切開。捲動並從切口走入。</p>
-  <div class="hint">捲動以開啟鏡頭</div>
+  <a class="cta" href="#start">Start a project</a>
+  <h1 class="head"><span class="ln"><span>See the house</span></span><span class="ln"><span><em>in section.</em></span></span></h1>
+  <p class="sub">A house on a slope, cut open at A-A. Scroll and walk in through the cut.</p>
+  <div class="hint">Scroll to open the lens</div>
+  <div class="room"><div class="r-txt"><span class="lv"></span><b></b><span class="nt"></span></div></div>
+  <div id="cad-map"></div>
   <div class="end">
-    <h2><span class="ln"><span>我們先繪製它。</span></span><span class="ln"><span><em>然後建造它。</em></span></span></h2>
-    <p class="sub2">Cota 是一家專注於困難地形房屋的小型工作室。每個專案都從這樣的剖面開始。</p>
-    <a class="btn" href="#start">開始專案<i>&rarr;</i></a>
+    <h2><span class="ln"><span>We draw it first.</span></span><span class="ln"><span><em>Then we build it.</em></span></span></h2>
+    <p class="sub2">Cota is a small studio for houses on difficult ground. Every project starts with a section like this one.</p>
+    <a class="btn" href="#start">Start a project<i>&rarr;</i></a>
   </div>
   <div id="tb">
-    <div class="t1">剖面 A-A</div>
-    <div class="rows"><div>斜坡上的房屋</div><div>比例 1:100</div><div>圖紙 A-301</div></div>
-    <div class="stamp">建於 2026</div>
+    <div class="frame"></div>
+    <div class="t1">Section A-A</div>
+    <div class="rows"><div>House on a slope</div><div>Scale 1:100</div><div>Sheet A-301</div></div>
+    <div class="kp"></div>
+    <div class="stamp">Built 2026</div>
   </div>
 </div>
-<div id="lcap"><div>剖面 A-A</div><div>載入中 <span id="lnum">000</span></div></div>
+<svg id="kp" viewBox="-0.5 -10.5 27 16.5" aria-hidden="true"></svg>
+<div id="lcap"><div>Section A-A</div><div>Loading <span id="lnum">000</span></div></div>
 <main id="track"></main>
 <script>
 window.__T0 = performance.now();
@@ -78,43 +99,5 @@ window.__loader = { p: 0.08 };
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
 <script type="module" src="main.js"></script>
-<script>
-(function() {
-  const texts = {
-    zh: { cta:'開始專案', h1a:'看見房屋', h1b:'在剖面中。', sub:'一座位於斜坡上的房屋，於 A-A 切開。捲動並從切口走入。', hint:'捲動以開啟鏡頭', end1:'我們先繪製它。', end2:'然後建造它。', endSub:'Cota 是一家專注於困難地形房屋的小型工作室。每個專案都從這樣的剖面開始。', btn:'開始專案', tb1:'剖面 A-A', tb2:'斜坡上的房屋', tb3:'比例 1:100', tb4:'圖紙 A-301', stamp:'建於 2026', load:'載入中' },
-    en: { cta:'Start a project', h1a:'See the house', h1b:'in section.', sub:'A house on a slope, cut open at A-A. Scroll and walk in through the cut.', hint:'Scroll to open the lens', end1:'We draw it first.', end2:'Then we build it.', endSub:'Cota is a small studio for houses on difficult ground. Every project starts with a section like this one.', btn:'Start a project', tb1:'Section A-A', tb2:'House on a slope', tb3:'Scale 1:100', tb4:'Sheet A-301', stamp:'Built 2026', load:'Loading' }
-  };
-  let lang = 'zh';
-  function apply() {
-    const t = texts[lang];
-    const cta = document.querySelector('.cta'); if (cta) cta.textContent = t.cta;
-    const h1 = document.querySelectorAll('.head .ln > span');
-    if (h1[0]) h1[0].textContent = t.h1a;
-    if (h1[1]) h1[1].innerHTML = '<em>' + t.h1b + '</em>';
-    const sub = document.querySelector('.sub'); if (sub) sub.textContent = t.sub;
-    const hint = document.querySelector('.hint'); if (hint) hint.textContent = t.hint;
-    const end = document.querySelectorAll('.end .ln > span');
-    if (end[0]) end[0].textContent = t.end1;
-    if (end[1]) end[1].innerHTML = '<em>' + t.end2 + '</em>';
-    const endSub = document.querySelector('.end .sub2'); if (endSub) endSub.textContent = t.endSub;
-    const btn = document.querySelector('.end .btn'); if (btn) btn.innerHTML = t.btn + '<i>&rarr;</i>';
-    const t1 = document.querySelector('#tb .t1'); if (t1) t1.textContent = t.tb1;
-    const rows = document.querySelectorAll('#tb .rows > div');
-    if (rows[0]) rows[0].textContent = t.tb2;
-    if (rows[1]) rows[1].textContent = t.tb3;
-    if (rows[2]) rows[2].textContent = t.tb4;
-    const stamp = document.querySelector('#tb .stamp'); if (stamp) stamp.textContent = t.stamp;
-    const load = document.querySelector('#lcap div:last-child'); if (load) load.innerHTML = t.load + ' <span id="lnum">000</span>';
-    const btnLang = document.getElementById('lang-btn'); if (btnLang) btnLang.textContent = lang === 'zh' ? 'EN' : '繁中';
-  }
-  const btn = document.createElement('button');
-  btn.id = 'lang-btn';
-  btn.textContent = 'EN';
-  btn.style.cssText = 'position:fixed;top:20px;right:180px;z-index:100;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.12em;padding:6px 10px;background:#1d1c19;color:#f2efe7;border:none;cursor:pointer;';
-  btn.onclick = function() { lang = lang === 'zh' ? 'en' : 'zh'; apply(); };
-  document.body.appendChild(btn);
-  setTimeout(apply, 200);
-})();
-</script>
 </body>
 </html>
