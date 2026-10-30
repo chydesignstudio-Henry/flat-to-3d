@@ -88,39 +88,5 @@
 <div id="fade"></div>
 <div id="scroll"></div>
 <script type="module" src="main.js"></script>
-<script>
-// Chinese override for demo 01 dynamic texts
-(function() {
-  const map = {
-    'THE BOARD': '面板',
-    'UNFOLDED ROOM': '展開房間',
-    'FLOOR BY FLOOR': '逐層',
-    'How the house': '房屋如何',
-    'comes together': '組合而成',
-    'Six layers': '六層構件',
-    'Scroll to build': '捲動以建造',
-    'Scroll to close': '捲動以摺合',
-    'Scroll to stack': '捲動以堆疊',
-    'We draw every face': '我們繪製每個面',
-    'Four storeys': '四層木構造',
-    'one week each': '每層一週',
-    'A · Panels': 'A · 面板',
-    'B · Rooms': 'B · 房間',
-    'C · Layers': 'C · 層次'
-  };
-  function apply() {
-    document.querySelectorAll('#h1, #lede, #hint, #cta, #kicker, #brand, #brandSub, .dir-switch a span').forEach(el => {
-      let t = el.textContent || '';
-      for (const [en, zh] of Object.entries(map)) {
-        if (t.includes(en)) t = t.replace(en, zh);
-      }
-      if (t && t !== el.textContent) el.textContent = t;
-    });
-  }
-  setInterval(apply, 400);
-  setTimeout(apply, 600);
-  setTimeout(apply, 2000);
-})();
-</script>
 </body>
 </html>
