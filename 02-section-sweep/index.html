@@ -292,7 +292,25 @@
 
 <script>
 (function(){
-  const map = {
+  const staticMap = {
+    '.cta': '開始專案',
+    '.head .ln:nth-child(1) > span': '看見房屋',
+    '.head .ln:nth-child(2) > span': '在剖面中。',
+    '.sub': '一座位於斜坡上的房屋，於 A-A 切開。捲動並從切口走入。',
+    '.hint': '捲動以開啟鏡頭',
+    '.end .ln:nth-child(1) > span': '我們先繪製它。',
+    '.end .ln:nth-child(2) > span': '然後建造它。',
+    '.end .sub2': 'Cota 是一家專注於困難地形房屋的小型工作室。每個專案都從這樣的剖面開始。',
+    '.end .btn': '開始專案 →',
+    '#tb .t1': '剖面 A-A',
+    '#tb .rows div:nth-child(1)': '斜坡上的房屋',
+    '#tb .rows div:nth-child(2)': '比例 1:100',
+    '#tb .rows div:nth-child(3)': '圖紙 A-301',
+    '#tb .stamp': '建於 2026',
+    '#lcap div:nth-child(1)': '剖面 A-A',
+    '#lcap div:nth-child(2)': '載入中'
+  };
+  const dynamicMap = {
     'The living room': '客廳', 'The study': '書房', 'The upper lounge': '上層休息室',
     'Over the living room': '客廳上方', 'The snug': '小客廳', 'The bedroom': '臥室',
     'The lower garden': '下層花園',
@@ -302,33 +320,37 @@
     'Sleeping on the garden': '面向花園的睡眠空間', 'The house from below': '從下方看房屋',
     'Through the cut': '穿過切口', 'Section A-A, opened at eye height': '剖面 A-A，於視線高度開啟',
     'Back through the cut': '再次穿過切口', 'The house opens at A-A again': '房屋再次於 A-A 開啟',
-    'LIVING': '客廳', 'STUDY': '書房', 'LOUNGE': '休息室', 'MEZZ': '夾層',
-    'SNUG': '小客廳', 'BEDROOM': '臥室', 'GARDEN': '花園', 'LOWER GARDEN': '下層花園',
-    'UPPER LOUNGE': '上層休息室',
-    'Section A-A': '剖面 A-A', 'Section perspective': '剖面透視',
-    'Scale 1:100': '比例 1:100', 'Not to scale': '非比例',
-    'House on a slope': '斜坡上的房屋', 'Sheet A-301': '圖紙 A-301', 'Built 2026': '建於 2026'
+    'LIVING': '客廳', 'STUDY': '書房', 'SNUG': '小客廳', 'BEDROOM': '臥室',
+    'GARDEN': '花園', 'LOWER GARDEN': '下層花園', 'UPPER LOUNGE': '上層休息室',
+    'CLERESTORY': '高窗', 'ROOF': '屋頂', 'ENTRANCE': '入口'
   };
-  function replaceText(el) {
-    if (!el || !el.textContent) return;
-    let t = el.textContent;
-    for (const [en, zh] of Object.entries(map)) { if (t.includes(en)) t = t.replace(en, zh); }
-    t = t.replace(/Eye height ([\d.]+) m/g, '視線高度 $1 公尺');
-    t = t.replace(/Lens <b>([\d,]+) mm<\/b>/g, '鏡頭 <b>$1 毫米</b>');
-    t = t.replace(/Lens ([\d,]+) mm/g, '鏡頭 $1 毫米');
-    if (t !== el.textContent) el.textContent = t;
+  function setStatic() {
+    for (const [sel, zh] of Object.entries(staticMap)) {
+      const el = document.querySelector(sel);
+      if (el && el.textContent !== zh) el.textContent = zh;
+    }
   }
-  function applyAll() {
-    document.querySelectorAll('.cta, .head .ln > span, .sub, .hint, .end .ln > span, .end .sub2, .end .btn, #tb .t1, #tb .rows > div, #tb .stamp, #lcap div, .room .lv, .room b, .room .nt, .chip').forEach(replaceText);
-    const cm = document.getElementById('cm-lbl'); if (cm) replaceText(cm);
+  function fixDynamic() {
+    document.querySelectorAll('.room .lv, .room b, .room .nt, #ov text, .chip').forEach(el => {
+      let t = el.textContent || '';
+      for (const [en, zh] of Object.entries(dynamicMap)) {
+        if (t.includes(en)) t = t.replace(en, zh);
+      }
+      t = t.replace(/EYE HEIGHT ([\d.]+) M/gi, '視線高度 $1 公尺');
+      t = t.replace(/LENS ([\d,]+) MM/gi, '鏡頭 $1 毫米');
+      t = t.replace(/Eye height ([\d.]+) m/gi, '視線高度 $1 公尺');
+      t = t.replace(/Lens ([\d,]+) mm/gi, '鏡頭 $1 毫米');
+      if (t && t !== el.textContent) el.textContent = t;
+    });
   }
+  function apply() { setStatic(); fixDynamic(); }
   const btn = document.createElement('button');
   btn.id = 'lang-btn'; btn.textContent = 'EN';
   btn.style.cssText = 'position:fixed;top:20px;right:180px;z-index:200;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.12em;padding:6px 10px;background:#1d1c19;color:#f2efe7;border:none;cursor:pointer;';
   btn.onclick = function(){ location.reload(); };
   document.body.appendChild(btn);
-  setTimeout(applyAll, 600);
-  setInterval(applyAll, 400);
+  setTimeout(apply, 300);
+  setInterval(apply, 250);
 })();
 </script>
 </body></html>
