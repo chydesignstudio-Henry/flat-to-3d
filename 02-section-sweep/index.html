@@ -292,10 +292,43 @@
 
 <script>
 (function(){
-  const texts={zh:{cta:'開始專案',h1a:'看見房屋',h1b:'在剖面中。',sub:'一座位於斜坡上的房屋，於 A-A 切開。捲動並從切口走入。',hint:'捲動以開啟鏡頭',end1:'我們先繪製它。',end2:'然後建造它。',endSub:'Cota 是一家專注於困難地形房屋的小型工作室。每個專案都從這樣的剖面開始。',btn:'開始專案',tb1:'剖面 A-A',tb2:'斜坡上的房屋',tb3:'比例 1:100',tb4:'圖紙 A-301',stamp:'建於 2026',load:'載入中'},en:{cta:'Start a project',h1a:'See the house',h1b:'in section.',sub:'A house on a slope, cut open at A-A. Scroll and walk in through the cut.',hint:'Scroll to open the lens',end1:'We draw it first.',end2:'Then we build it.',endSub:'Cota is a small studio for houses on difficult ground. Every project starts with a section like this one.',btn:'Start a project',tb1:'Section A-A',tb2:'House on a slope',tb3:'Scale 1:100',tb4:'Sheet A-301',stamp:'Built 2026',load:'Loading'}};
-  let lang='zh';
-  function apply(){const t=texts[lang];const cta=document.querySelector('.cta');if(cta)cta.textContent=t.cta;const h1=document.querySelectorAll('.head .ln > span');if(h1[0])h1[0].textContent=t.h1a;if(h1[1])h1[1].innerHTML='<em>'+t.h1b+'</em>';const sub=document.querySelector('.sub');if(sub)sub.textContent=t.sub;const hint=document.querySelector('.hint');if(hint)hint.textContent=t.hint;const end=document.querySelectorAll('.end .ln > span');if(end[0])end[0].textContent=t.end1;if(end[1])end[1].innerHTML='<em>'+t.end2+'</em>';const endSub=document.querySelector('.end .sub2');if(endSub)endSub.textContent=t.endSub;const btn=document.querySelector('.end .btn');if(btn)btn.innerHTML=t.btn+'<i>&rarr;</i>';const t1=document.querySelector('#tb .t1');if(t1)t1.textContent=t.tb1;const rows=document.querySelectorAll('#tb .rows > div');if(rows[0])rows[0].textContent=t.tb2;if(rows[1])rows[1].textContent=t.tb3;if(rows[2])rows[2].textContent=t.tb4;const stamp=document.querySelector('#tb .stamp');if(stamp)stamp.textContent=t.stamp;const load=document.querySelector('#lcap div:last-child');if(load)load.innerHTML=t.load+' <span id="lnum">000</span>';const lb=document.getElementById('lang-btn');if(lb)lb.textContent=lang==='zh'?'EN':'繁中';}
-  const btn=document.createElement('button');btn.id='lang-btn';btn.textContent='EN';btn.style.cssText='position:fixed;top:20px;right:180px;z-index:200;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.12em;padding:6px 10px;background:#1d1c19;color:#f2efe7;border:none;cursor:pointer;';btn.onclick=function(){lang=lang==='zh'?'en':'zh';apply();};document.body.appendChild(btn);setTimeout(apply,400);
+  const map = {
+    'The living room': '客廳', 'The study': '書房', 'The upper lounge': '上層休息室',
+    'Over the living room': '客廳上方', 'The snug': '小客廳', 'The bedroom': '臥室',
+    'The lower garden': '下層花園',
+    '6.40 m high, the low sun of December': '高度 6.40 公尺，十二月低角度陽光',
+    'Sunlit studio above the living space': '客廳上方的陽光工作室',
+    'From the mezzanine edge': '從夾層邊緣', 'A fire under the living room': '客廳下方的壁爐',
+    'Sleeping on the garden': '面向花園的睡眠空間', 'The house from below': '從下方看房屋',
+    'Through the cut': '穿過切口', 'Section A-A, opened at eye height': '剖面 A-A，於視線高度開啟',
+    'Back through the cut': '再次穿過切口', 'The house opens at A-A again': '房屋再次於 A-A 開啟',
+    'LIVING': '客廳', 'STUDY': '書房', 'LOUNGE': '休息室', 'MEZZ': '夾層',
+    'SNUG': '小客廳', 'BEDROOM': '臥室', 'GARDEN': '花園', 'LOWER GARDEN': '下層花園',
+    'UPPER LOUNGE': '上層休息室',
+    'Section A-A': '剖面 A-A', 'Section perspective': '剖面透視',
+    'Scale 1:100': '比例 1:100', 'Not to scale': '非比例',
+    'House on a slope': '斜坡上的房屋', 'Sheet A-301': '圖紙 A-301', 'Built 2026': '建於 2026'
+  };
+  function replaceText(el) {
+    if (!el || !el.textContent) return;
+    let t = el.textContent;
+    for (const [en, zh] of Object.entries(map)) { if (t.includes(en)) t = t.replace(en, zh); }
+    t = t.replace(/Eye height ([\d.]+) m/g, '視線高度 $1 公尺');
+    t = t.replace(/Lens <b>([\d,]+) mm<\/b>/g, '鏡頭 <b>$1 毫米</b>');
+    t = t.replace(/Lens ([\d,]+) mm/g, '鏡頭 $1 毫米');
+    if (t !== el.textContent) el.textContent = t;
+  }
+  function applyAll() {
+    document.querySelectorAll('.cta, .head .ln > span, .sub, .hint, .end .ln > span, .end .sub2, .end .btn, #tb .t1, #tb .rows > div, #tb .stamp, #lcap div, .room .lv, .room b, .room .nt, .chip').forEach(replaceText);
+    const cm = document.getElementById('cm-lbl'); if (cm) replaceText(cm);
+  }
+  const btn = document.createElement('button');
+  btn.id = 'lang-btn'; btn.textContent = 'EN';
+  btn.style.cssText = 'position:fixed;top:20px;right:180px;z-index:200;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.12em;padding:6px 10px;background:#1d1c19;color:#f2efe7;border:none;cursor:pointer;';
+  btn.onclick = function(){ location.reload(); };
+  document.body.appendChild(btn);
+  setTimeout(applyAll, 600);
+  setInterval(applyAll, 400);
 })();
 </script>
 </body></html>
