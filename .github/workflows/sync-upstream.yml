@@ -1,0 +1,223 @@
+# 每天台灣時間約 03:00（UTC+8、無日光節約時間 = 19:00 UTC）把這個 fork 的
+# 預設分支跟上游預設分支合併。另外可用 workflow_dispatch 手動跑。
+#
+# 使用 GitHub 的 merge-upstream API（也就是 `gh repo sync` 在遠端 fork 上
+# 第一步會打的那支 API），以 GITHUB_TOKEN 的 contents: write 合併。
+# 能快轉就快轉，歷史已分叉但沒有衝突就建立合併提交，因此這個 fork 自己
+# 新增的檔案會留下來。
+#
+# 衝突時 API 回 409。本工作流程不會改走 git ref 更新，也不會帶 force=true，
+# 所以不會強制推送、也不會覆蓋 fork 的內容；它會讓這次執行失敗，並開
+# （或追記）一個 issue。
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: "0 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: sync-upstream-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Merge upstream default branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Merge upstream into this fork
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "::error::缺少 GITHUB_TOKEN，無法同步。"
+            exit 1
+          fi
+
+          meta=$(gh api "repos/${REPO}")
+          is_fork=$(jq -r '.fork' <<<"$meta")
+          parent=$(jq -r '.parent.full_name // empty' <<<"$meta")
+          parent_url=$(jq -r '.parent.html_url // empty' <<<"$meta")
+          fork_branch=$(jq -r '.default_branch // empty' <<<"$meta")
+          upstream_branch=$(jq -r '.parent.default_branch // empty' <<<"$meta")
+
+          if [[ "$is_fork" != "true" || -z "$parent" || -z "$fork_branch" ]]; then
+            echo "::error::無法判斷上游。${REPO} 不是 fork，或 API 沒有回傳 parent。"
+            exit 1
+          fi
+
+          if [[ -z "$upstream_branch" ]]; then
+            upstream_branch=$(gh api "repos/${parent}" --jq .default_branch | tr -d '"')
+          fi
+
+          echo "Fork: ${REPO} @ ${fork_branch}"
+          echo "Upstream: ${parent} @ ${upstream_branch} (${parent_url})"
+
+          summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          {
+            echo "### 上游同步"
+            echo ""
+            echo "- Fork：\`${REPO}\` 的 \`${fork_branch}\`"
+            echo "- 上游：[\`${parent}\`](${parent_url}) 的 \`${upstream_branch}\`"
+          } >> "$summary"
+
+          tmp=$(mktemp)
+          err=$(mktemp)
+          trap 'rm -f "$tmp" "$err"' EXIT
+
+          # 只打 merge-upstream。不 PATCH git/refs，不傳 force。
+          set +e
+          gh api --method POST --include \
+            "repos/${REPO}/merge-upstream" \
+            -f "branch=${fork_branch}" >"$tmp" 2>"$err"
+          api_status=$?
+          set -e
+
+          echo "----- response -----"
+          cat "$tmp" || true
+          echo "----- stderr -----"
+          cat "$err" || true
+
+          parsed=$(python3 - "$tmp" <<'PY'
+          import json, re, sys
+          text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          parts = re.split(r"\r?\n\r?\n", text, maxsplit=1)
+          header = parts[0]
+          body = parts[1] if len(parts) > 1 else ""
+          match = re.search(r"^HTTP/\S+\s+(\d+)", header)
+          code = match.group(1) if match else ""
+          message = ""
+          merge_type = ""
+          stripped = body.strip()
+          if stripped.startswith("{"):
+              try:
+                  data = json.loads(stripped)
+              except json.JSONDecodeError:
+                  data = {}
+              message = str(data.get("message") or "")
+              merge_type = str(data.get("merge_type") or "")
+          print(code)
+          print(merge_type.replace("\n", " "))
+          print(message.replace("\n", " "))
+          PY
+          )
+          http_code=$(sed -n '1p' <<<"$parsed" | tr -d '\r')
+          merge_type=$(sed -n '2p' <<<"$parsed" | tr -d '\r')
+          message=$(sed -n '3p' <<<"$parsed" | tr -d '\r')
+
+          if [[ "$http_code" == "200" ]]; then
+            case "$merge_type" in
+              none)
+                detail="已經和上游一致，沒有新的提交需要合併。"
+                ;;
+              fast-forward)
+                detail="已快轉到上游，沒有覆蓋這個 fork 的提交。"
+                ;;
+              merge)
+                detail="已建立合併提交。這個 fork 自己新增的檔案都還在。"
+                ;;
+              *)
+                detail="同步完成（merge_type=${merge_type:-unknown}）。"
+                ;;
+            esac
+            echo "$detail"
+            echo "${message}"
+            {
+              echo "- 結果：${detail}"
+              if [[ -n "$message" ]]; then
+                echo "- 訊息：${message}"
+              fi
+            } >> "$summary"
+            exit 0
+          fi
+
+          echo "::error::上游同步失敗（HTTP ${http_code:-unknown}，gh exit ${api_status}）。沒有強制推送。"
+          {
+            echo "- 結果：失敗（HTTP ${http_code:-unknown}）"
+            if [[ -n "$message" ]]; then
+              echo "- 訊息：${message}"
+            fi
+          } >> "$summary"
+
+          if [[ "$http_code" == "422" && "$message" == *[Ww]orkflow* ]]; then
+            echo "::error::上游變更碰到 workflow 檔，但權杖不被允許修改 workflow。這不是內容衝突，也沒有覆蓋任何檔案。"
+            exit 1
+          fi
+
+          if [[ "$http_code" != "409" ]]; then
+            exit 1
+          fi
+
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          issue_body=$(mktemp)
+          cat > "$issue_body" <<EOF
+          自動同步上游時發生**合併衝突**。這次同步已停止。
+
+          沒有強制推送，也沒有覆蓋這個 fork 自己新增或修改的檔案。
+
+          - Fork：\`${REPO}\` 的 \`${fork_branch}\`
+          - 上游：[${parent}](${parent_url}) 的 \`${upstream_branch}\`
+          - HTTP：${http_code}
+          - 訊息：${message:-（無）}
+          - 執行紀錄：${run_url}
+
+          ### 建議處理方式
+
+          在本機把上游合併進來、解決衝突後，用一般的 push 推回 \`${fork_branch}\`。請不要使用 \`git push --force\` 或 \`git reset --hard\`。
+
+          \`\`\`bash
+          git fetch https://github.com/${parent}.git ${upstream_branch}
+          git checkout ${fork_branch}
+          git merge FETCH_HEAD
+          # 解決衝突後
+          git push origin ${fork_branch}
+          \`\`\`
+
+          此 issue 由 \`.github/workflows/sync-upstream.yml\` 建立。
+          EOF
+
+          have_label=0
+          if gh label create upstream-sync --repo "$REPO" \
+            --color B60205 \
+            --description "上游自動同步發生衝突，需要手動合併" \
+            --force; then
+            have_label=1
+          else
+            echo "::warning::無法建立 upstream-sync 標籤，仍會開 issue。"
+          fi
+
+          if [[ "$have_label" == "1" ]]; then
+            existing=$(gh issue list --repo "$REPO" --state open --limit 100 \
+              --label upstream-sync --json number \
+              | jq -r '.[0].number // empty')
+          else
+            existing=$(gh issue list --repo "$REPO" --state open --limit 100 \
+              --json number,title \
+              | jq -r '[.[] | select(.title | startswith("上游同步衝突"))][0].number // empty')
+          fi
+
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --repo "$REPO" --body-file "$issue_body"
+            echo "::error::合併衝突。已追記在 issue #${existing}，沒有覆蓋 fork。"
+          elif [[ "$have_label" == "1" ]]; then
+            url=$(gh issue create --repo "$REPO" \
+              --title "上游同步衝突：${fork_branch} 無法合併 ${parent}@${upstream_branch}" \
+              --body-file "$issue_body" \
+              --label upstream-sync)
+            echo "::error::合併衝突。已開啟 ${url}，沒有覆蓋 fork。"
+          else
+            url=$(gh issue create --repo "$REPO" \
+              --title "上游同步衝突：${fork_branch} 無法合併 ${parent}@${upstream_branch}" \
+              --body-file "$issue_body")
+            echo "::error::合併衝突。已開啟 ${url}，沒有覆蓋 fork。"
+          fi
+          rm -f "$issue_body"
+          exit 1
